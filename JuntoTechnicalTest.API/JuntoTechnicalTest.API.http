@@ -1,0 +1,6 @@
+@JuntoTechnicalTest.API_HostAddress = http://localhost:5072
+
+GET {{JuntoTechnicalTest.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
