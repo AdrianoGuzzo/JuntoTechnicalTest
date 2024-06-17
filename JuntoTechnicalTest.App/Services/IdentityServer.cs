@@ -2,15 +2,15 @@
 using IdentityModel.Client;
 using JuntoTechnicalTest.App.Services.Interfaces;
 using JuntoTechnicalTest.Common.Dto;
+using JuntoTechnicalTest.Common.Exceptions;
 
 namespace JuntoTechnicalTest.App.Services
 {
     public class IdentityServer : ClientServerBase, IIdentityServer
     {
         private readonly IConfiguration _configuration;
-        protected IdentityServer(HttpClient httpClient, 
-            IHttpContextAccessor httpContextAccessor, 
-            IConfiguration configuration) : base(httpClient, httpContextAccessor)
+        public IdentityServer(HttpClient httpClient,             
+            IConfiguration configuration, IHttpContextAccessor httpContextAccessor) : base(httpClient, httpContextAccessor)
         {
             _configuration = configuration;
         }
@@ -30,7 +30,7 @@ namespace JuntoTechnicalTest.App.Services
             });
             if (response.IsError)
             {
-               // throw new ValidationException(new Dictionary<string, string[]> { { "token", new string[] { response.ErrorDescription ?? "" } } });
+               throw new ValidationException(new Dictionary<string, string[]> { { "token", new string[] { response.ErrorDescription ?? "" } } });
             }
             return response;
         }

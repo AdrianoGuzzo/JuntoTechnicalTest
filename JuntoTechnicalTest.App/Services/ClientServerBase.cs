@@ -4,26 +4,27 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text;
 using JuntoTechnicalTest.App.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using JuntoTechnicalTest.Common.Exceptions;
+using System.Reflection.Metadata;
+using System.Security.Claims;
 
 namespace JuntoTechnicalTest.App.Services
 {
     public class ClientServerBase : IClientServer
     {
         protected readonly HttpClient _httpClient;
-
+     
         protected ClientServerBase(HttpClient httpClient, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
-
             var context = httpContextAccessor.HttpContext;
-            if (context != null)
+            if ( context?.User?.Identity?.IsAuthenticated is true)
             {
-                var headers = context.Request.Headers;
-                if (headers.TryGetValue("Authorization", out Microsoft.Extensions.Primitives.StringValues value))
-                    _httpClient.DefaultRequestHeaders.Add("Authorization", value.ToString());
-            }
-            else
-                throw new Exception("httpContextAccessor not found");
+                var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+              
+                _httpClient.DefaultRequestHeaders.Add("user-id", userId);
+            }         
         }
 
         public async Task<TResult?> Post<TResult, TModel>(string action, TModel obj)
@@ -33,13 +34,9 @@ namespace JuntoTechnicalTest.App.Services
             var json = JsonSerializer.Serialize(obj);
             var data = new StringContent(json, Encoding.UTF8, "application/json");
 
-            HttpResponseMessage? response = await _httpClient.PostAsync(builder.ToString(), data);
+            HttpResponseMessage response = await _httpClient.PostAsync(builder.ToString(), data);
 
-            if (response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                //ValidationProblemDetails? validationProblemDetails = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
-                //throw new ValidationException(validationProblemDetails?.Errors ?? new Dictionary<string, string[]>());
-            }
+            await HandleErrors(response);
 
             var result = await response.Content.ReadFromJsonAsync<TResult>();
             return result;
@@ -58,8 +55,23 @@ namespace JuntoTechnicalTest.App.Services
             using StringContent data = new(json, Encoding.UTF8, "application/json");
 
             HttpResponseMessage? response = await _httpClient.GetAsync(builder.ToString());
+
+            await HandleErrors(response);
+
             var result = await response.Content.ReadFromJsonAsync<TResult>();
             return result;
+        }
+
+        private async Task HandleErrors(HttpResponseMessage response)
+        {
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                ValidationProblemDetails? validationProblemDetails = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+                throw new ValidationException(validationProblemDetails?.Errors ?? new Dictionary<string, string[]>());
+            }
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+                throw new AuthorizationException("Unauthorized");
         }
 
         private bool ConstructUrlWithParams<TModel>(TModel? obj, UriBuilder builder, out string? query)
