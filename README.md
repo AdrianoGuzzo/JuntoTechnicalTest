@@ -11,7 +11,9 @@
 - CRUD de usuários, geração de token seguro e troca de password (não precisa enviar o e-mail)
 - Uso de qualquer banco de dados relacional;
 
+
+
 ## Arquitetura do projeto:
-Essa arquitetura foi desenvolvida criando um serviço de autenticação com Identity Server, utilizando o framework Duende. Foi criada também uma API que consome esse serviço de autenticação para validar tokens JWT e para criar e alterar senhas de usuários.
+Essa arquitetura foi desenvolvida criando um serviço de autenticação com Identity Server, utilizando o framework Duende. Foi criada também uma API que consome esse serviço de autenticação para validar tokens JWT e para criar e alterar senhas de usuários. O Banco de Dados usado foi o SqlLite, então não tem a necessidade de configurar um container de banco, pois o sqlLite criar o banco em arquivo local.
 
 ![Logo do Markdown](https://macoratti.net/22/06/duende_protapiusercred11.jpg)
